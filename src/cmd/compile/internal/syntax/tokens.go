@@ -20,13 +20,14 @@ const (
 
 	// operators and operations
 	// _Operator is excluding '*' (_Star)
-	_Operator // op
-	_AssignOp // op=
-	_IncOp    // opop
-	_Assign   // =
-	_Define   // :=
-	_Arrow    // <-
-	_Star     // *
+	_Operator  // op
+	_AssignOp  // op=
+	_IncOp     // opop
+	_Assign    // =
+	_Define    // :=
+	_Arrow     // <-
+	_Star      // *
+	_PipeArrow // |>
 
 	// delimiters
 	_Lparen    // (

@@ -878,6 +878,29 @@ func (p *parser) binaryExpr(x Expr, prec int) Expr {
 		t.Y = p.binaryExpr(nil, tprec)
 		x = t
 	}
+	// Pipe operator: lhs |> f(args...) desugars to f(lhs, args...).
+	// Left-associative; lower precedence than all binary operators.
+	for prec == 0 && p.tok == _PipeArrow {
+		pos := p.pos()
+		p.next()
+		rhs := p.unaryExpr()
+		if call, ok := rhs.(*CallExpr); ok {
+			// f(args...) → f(lhs, args...)
+			newArgs := make([]Expr, len(call.ArgList)+1)
+			newArgs[0] = x
+			copy(newArgs[1:], call.ArgList)
+			call.ArgList = newArgs
+			call.pos = pos
+			x = call
+		} else {
+			// bare f → f(lhs)
+			call := new(CallExpr)
+			call.pos = pos
+			call.Fun = rhs
+			call.ArgList = []Expr{x}
+			x = call
+		}
+	}
 	return x
 }
 
