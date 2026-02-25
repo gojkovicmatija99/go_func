@@ -77,47 +77,14 @@ To run the test case above just run:
 ./bin/go run src/cmd/compile/internal/syntax/testdata/pipe.go 
 ```
 
-## Goal: `filter`, `fmap`, `reduce` as built-in functions
+## Roadmap
 
-Currently `filter`, `fmap`, and `reduce` are user-space generic functions —
-you have to define them yourself or import them. The goal is to make them
-**true compiler builtins** like `len` and `append`: no import, type-checked
-by the compiler, desugared to range loops by the walk phase.
-
-```go
-// target: works without any import or definition
-xs := []int{1, 2, 3, 4, 5}
-evens  := filter(xs, func(x int) bool { return x%2 == 0 })
-strs   := fmap(xs, func(x int) string { return fmt.Sprint(x) })
-total  := reduce(xs, 0, func(acc, x int) int { return acc + x })
-```
-
-**Signatures:**
-```go
-filter(s []T, f func(T) bool) []T
-fmap(s []T, f func(T) U) []U        // T inferred from slice, U from func return
-reduce(s []T, init U, f func(U, T) U) U
-```
-
-## Ideas for more functional features
-
-### Parser-only (same approach as `|>`)
-
-| Feature | Syntax | Desugars to |
-|---------|--------|-------------|
-| zip | `zip(xs, ys)` | range loop building `[]pair` |
-| flatten | `flatten(xss)` | nested range + append |
-| any / all | `any(xs, pred)` | range + early return |
-| fn shorthand | `fn(x) x*2` | `func(x T) T { return x*2 }` |
-
-### More built-in functions
-
-| Function | Signature | Note |
-|----------|-----------|------|
-| `sum` | `sum([]T) T` | warmup: no second type param |
-| `take` / `drop` | `take([]T, n) []T` | trivial slice re-slice in walk |
-| `groupBy` | `groupBy([]T, func(T)K) map[K][]T` | two type params, map in walk |
-| `flatMap` | `flatMap([]T, func(T)[]U) []U` | combines fmap + flatten |
+| # | Feature | Compiler phases touched | Status |
+|---|---------|------------------------|--------|
+| 1 | `\|>` pipe operator | scanner, parser | done |
+| 2 | `fn` lambda shorthand (`fn(x) x*2`) | scanner, parser | planned |
+| 3 | `filter`, `fmap`, `reduce` as builtins | types2, typecheck, walk | planned |
+| 4 | Custom IR node (`OPIPELINE` or similar) | ir, walk | planned |
 
 ---
 
