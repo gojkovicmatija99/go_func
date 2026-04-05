@@ -38,6 +38,7 @@ var builtinFuncs = [...]struct {
 	{"complex", ir.OCOMPLEX},
 	{"copy", ir.OCOPY},
 	{"delete", ir.ODELETE},
+	{"filter", ir.OFILTER},
 	{"imag", ir.OIMAG},
 	{"len", ir.OLEN},
 	{"make", ir.OMAKE},

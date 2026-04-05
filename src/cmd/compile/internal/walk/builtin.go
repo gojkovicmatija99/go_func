@@ -1010,6 +1010,49 @@ func isByteCount(n ir.Node) bool {
 		(n.(*ir.UnaryExpr).X.Op() == ir.OBYTES2STR || n.(*ir.UnaryExpr).X.Op() == ir.OBYTES2STRTMP)
 }
 
+// walkFilter lowers filter(s, pred) to a range loop:
+//
+//	var result []T
+//	for _, elem := range s {
+//	    if pred(elem) { result = append(result, elem) }
+//	}
+//	result
+func walkFilter(n *ir.CallExpr, init *ir.Nodes) ir.Node {
+	init.Append(ir.TakeInit(n)...)
+	walkExprList(n.Args, init)
+
+	slice := n.Args[0]
+	pred := n.Args[1]
+	sliceType := n.Type() // []T
+	elemType := sliceType.Elem()
+
+	// var result []T
+	result := typecheck.TempAt(base.Pos, ir.CurFunc, sliceType)
+	init.Append(typecheck.Stmt(ir.NewAssignStmt(base.Pos, result, typecheck.NodNil())))
+
+	// Loop variable: elem T
+	elem := typecheck.TempAt(base.Pos, ir.CurFunc, elemType)
+
+	// pred(elem)
+	predCall := typecheck.Call(base.Pos, pred, []ir.Node{elem}, false)
+
+	// result = append(result, elem)
+	appendCall := ir.NewCallExpr(base.Pos, ir.OAPPEND, nil, []ir.Node{result, elem})
+	appendCall.SetType(sliceType)
+	assign := ir.NewAssignStmt(base.Pos, result, appendCall)
+
+	// if pred(elem) { result = append(result, elem) }
+	nif := ir.NewIfStmt(base.Pos, predCall, nil, nil)
+	nif.Body.Append(typecheck.Stmt(assign))
+
+	// for _, elem = range slice { ... }
+	blank := typecheck.TempAt(base.Pos, ir.CurFunc, types.Types[types.TINT])
+	rangeStmt := ir.NewRangeStmt(base.Pos, blank, elem, slice, []ir.Node{nif}, false)
+	init.Append(walkStmt(typecheck.Stmt(rangeStmt)))
+
+	return walkExpr(result, init)
+}
+
 // isChanLenCap reports whether n is of the form len(c) or cap(c) for a channel c.
 // Note that this does not check for -n or instrumenting because this
 // is a correctness rewrite, not an optimization.

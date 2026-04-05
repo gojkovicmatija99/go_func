@@ -417,6 +417,10 @@ func typecheck1(n ir.Node, top int) ir.Node {
 		n := n.(*ir.CallExpr)
 		return tcDelete(n)
 
+	case ir.OFILTER:
+		n := n.(*ir.CallExpr)
+		return tcFilter(n)
+
 	case ir.OAPPEND:
 		n := n.(*ir.CallExpr)
 		return tcAppend(n)

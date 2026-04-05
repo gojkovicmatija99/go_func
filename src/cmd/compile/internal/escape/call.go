@@ -179,6 +179,12 @@ func (e *escape) call(ks []hole, call ir.Node) {
 		e.discard(call.X)
 		e.discard(call.Y)
 
+	case ir.OFILTER:
+		call := call.(*ir.CallExpr)
+		// The input slice elements may flow to the result slice.
+		argument(e.teeHole(ks[0], e.mutatorHole()), call.Args[0])
+		e.discard(call.Args[1])
+
 	case ir.ODELETE, ir.OPRINT, ir.OPRINTLN, ir.ORECOVERFP:
 		call := call.(*ir.CallExpr)
 		for _, arg := range call.Args {

@@ -162,7 +162,7 @@ func tcCall(n *ir.CallExpr, top int) ir.Node {
 		default:
 			base.Fatalf("unknown builtin %v", l)
 
-		case ir.OAPPEND, ir.ODELETE, ir.OMAKE, ir.OMAX, ir.OMIN, ir.OPRINT, ir.OPRINTLN, ir.ORECOVER:
+		case ir.OAPPEND, ir.ODELETE, ir.OFILTER, ir.OMAKE, ir.OMAX, ir.OMIN, ir.OPRINT, ir.OPRINTLN, ir.ORECOVER:
 			n.SetOp(l.BuiltinOp)
 			n.Fun = nil
 			n.SetTypecheck(0) // re-typechecking new op is OK, not a loop
@@ -868,4 +868,51 @@ func (iter *ClosureStructIter) Next() (n *ir.Name, typ *types.Type, offset int64
 	offset = types.RoundUp(iter.offset, typ.Alignment())
 	iter.offset = offset + typ.Size()
 	return n, typ, offset
+}
+
+// tcFilter typechecks an OFILTER node.
+// filter(s []T, pred func(T) bool) []T returns a new slice of elements for which pred returns true.
+func tcFilter(n *ir.CallExpr) ir.Node {
+	typecheckargs(n)
+	args := n.Args
+	if len(args) != 2 {
+		base.Errorf("filter requires exactly 2 arguments")
+		n.SetType(nil)
+		return n
+	}
+
+	// args[0] must be a slice.
+	sliceArg := args[0]
+	sliceType := sliceArg.Type()
+	if sliceType == nil {
+		n.SetType(nil)
+		return n
+	}
+	if !sliceType.IsSlice() {
+		base.Errorf("first argument to filter must be a slice; have %L", sliceType)
+		n.SetType(nil)
+		return n
+	}
+	elemType := sliceType.Elem()
+
+	// args[1] must be func(T) bool.
+	predArg := args[1]
+	predType := predArg.Type()
+	if predType == nil {
+		n.SetType(nil)
+		return n
+	}
+	if !predType.IsKind(types.TFUNC) || predType.NumParams() != 1 || predType.NumResults() != 1 || !predType.Result(0).Type.IsBoolean() {
+		base.Errorf("second argument to filter must be func(T) bool; have %L", predType)
+		n.SetType(nil)
+		return n
+	}
+	if !types.Identical(predType.Param(0).Type, elemType) {
+		base.Errorf("filter predicate parameter type %v does not match slice element type %v", predType.Param(0).Type, elemType)
+		n.SetType(nil)
+		return n
+	}
+
+	n.SetType(types.NewSlice(elemType))
+	return n
 }

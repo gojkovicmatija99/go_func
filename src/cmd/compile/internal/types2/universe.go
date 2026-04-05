@@ -203,6 +203,10 @@ const (
 	// testing support
 	_Assert
 	_Trace
+
+	_Filter
+	_Fmap
+	_Reduce
 )
 
 var predeclaredFuncs = [...]struct {
@@ -242,6 +246,10 @@ var predeclaredFuncs = [...]struct {
 
 	_Assert: {"assert", 1, false, statement},
 	_Trace:  {"trace", 0, true, statement},
+
+	_Filter: {"filter", 2, false, expression},
+	_Fmap:   {"fmap", 2, false, expression},
+	_Reduce: {"reduce", 2, false, expression},
 }
 
 func defPredeclaredFuncs() {

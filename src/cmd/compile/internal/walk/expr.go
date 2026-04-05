@@ -219,6 +219,10 @@ func walkExpr1(n ir.Node, init *ir.Nodes) ir.Node {
 		n := n.(*ir.CallExpr)
 		return walkDelete(init, n)
 
+	case ir.OFILTER:
+		n := n.(*ir.CallExpr)
+		return walkFilter(n, init)
+
 	case ir.OAS2DOTTYPE:
 		n := n.(*ir.AssignListStmt)
 		return walkAssignDotType(n, init)

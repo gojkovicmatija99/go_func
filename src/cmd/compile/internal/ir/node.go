@@ -177,6 +177,7 @@ const (
 	ODCLFUNC // func f() or func (r) f()
 
 	ODELETE        // delete(Args)
+	OFILTER        // filter(s, pred) (filter slice elements by predicate)
 	ODOT           // X.Sel (X is of struct type)
 	ODOTPTR        // X.Sel (X is of pointer to struct type)
 	ODOTMETH       // X.Sel (X is non-interface, Sel is method name)

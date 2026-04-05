@@ -907,6 +907,43 @@ func (check *Checker) builtin(x *operand, call *syntax.CallExpr, id builtinId) (
 		}
 		// trace is only available in test mode - no need to record signature
 
+	case _Filter:
+		// filter(s []T, pred func(T) bool) []T returns a new slice containing
+		// only the elements of s for which pred returns true.
+		// args[0] is the slice, args[1] is the predicate.
+
+		// args[0] must be a slice.
+		sliceTyp, ok := under(x.typ).(*Slice)
+		if !ok {
+			check.errorf(argList[0], Test, invalidOp+"filter first argument must be a slice; have %s", x.typ)
+			return
+		}
+		elemType := sliceTyp.Elem()
+		sliceType := x.typ
+
+		// args[1] must be func(T) bool.
+		pred := args[1]
+		sig, ok := under(pred.typ).(*Signature)
+		if !ok || sig.Params().Len() != 1 || sig.Results().Len() != 1 {
+			check.errorf(argList[1], Test, invalidOp+"filter predicate must be func(T) bool; have %s", pred.typ)
+			return
+		}
+		if !isBoolean(sig.Results().At(0).typ) {
+			check.errorf(argList[1], Test, invalidOp+"filter predicate must return bool")
+			return
+		}
+		if !Identical(sig.Params().At(0).typ, elemType) {
+			check.errorf(argList[1], Test, invalidOp+"filter predicate parameter type %s does not match slice element type %s", sig.Params().At(0).typ, elemType)
+			return
+		}
+
+		// Result is []T.
+		x.mode = value
+		x.typ = NewSlice(elemType)
+		if check.recordTypes() {
+			check.recordBuiltinType(call.Fun, makeSig(NewSlice(elemType), sliceType, pred.typ))
+		}
+
 	default:
 		panic("unreachable")
 	}

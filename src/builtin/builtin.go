@@ -308,3 +308,18 @@ func println(args ...Type)
 type error interface {
 	Error() string
 }
+
+// The filter built-in function returns a slice of the same type as s, containing
+// only the elements of s for which f returns true. The order of the elements
+// is preserved.
+func filter[T any](s []T, f func(T) bool) []T
+
+// The map built-in function returns a slice of the same type as s, containing
+// the results of applying f to each element of s. The order of the elements
+// is preserved.
+func fmap[T, U any](s []T, f func(T) U) []U
+
+// The reduce built-in function applies a binary function f to a start value
+// init and all elements of s, in order, to produce a single result. For example,
+// if s is the slice [a, b, c], then reduce returns f(f(f(init, a), b), c).
+func reduce[T, U any](s []T, init U, f func(U, T) U) U

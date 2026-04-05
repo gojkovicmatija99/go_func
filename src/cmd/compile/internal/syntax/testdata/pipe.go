@@ -9,16 +9,6 @@ package main
 
 import "fmt"
 
-func filter[T any](s []T, f func(T) bool) []T {
-	var r []T
-	for _, x := range s {
-		if f(x) {
-			r = append(r, x)
-		}
-	}
-	return r
-}
-
 func fmap[T, U any](s []T, f func(T) U) []U {
 	r := make([]U, len(s))
 	for i, x := range s {
